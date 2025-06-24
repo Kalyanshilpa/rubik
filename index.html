@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rubik's Cube Solver</title>
+  <style>
+    #cube {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Rubik's Cube Solver (Beginner-Friendly)</h1>
+  <button onclick="scrambleCube()">Scramble Cube</button>
+  <button onclick="solveCube()">Solve Cube</button>
+  <div id="cube"></div>
+
+  <script>
+    // Face colors: r=red, g=green, b=blue, y=yellow, o=orange, w=white
+    class RubiksCube {
+      constructor() {
+        this.faces = {
+          U: Array(9).fill('w'),
+          D: Array(9).fill('y'),
+          F: Array(9).fill('g'),
+          B: Array(9).fill('b'),
+          L: Array(9).fill('o'),
+          R: Array(9).fill('r'),
+        };
+        this.moves = [];
+      }
+
+      getColorString() {
+        return (
+          this.faces.U.join('') +
+          this.faces.R.join('') +
+          this.faces.F.join('') +
+          this.faces.D.join('') +
+          this.faces.L.join('') +
+          this.faces.B.join('')
+        );
+      }
+
+      rotateFace(face, clockwise = true) {
+        const rotate = (f) => {
+          const res = [...f];
+          if (clockwise) {
+            res[0] = f[6]; res[1] = f[3]; res[2] = f[0];
+            res[3] = f[7]; res[4] = f[4]; res[5] = f[1];
+            res[6] = f[8]; res[7] = f[5]; res[8] = f[2];
+          } else {
+            res[0] = f[2]; res[1] = f[5]; res[2] = f[8];
+            res[3] = f[1]; res[4] = f[4]; res[5] = f[7];
+            res[6] = f[0]; res[7] = f[3]; res[8] = f[6];
+          }
+          return res;
+        };
+
+        this.faces[face] = rotate(this.faces[face]);
+
+        // Adjacent edges - for simplicity, only implementing "F" rotation (you can expand this)
+        if (face === 'F') {
+          const { U, D, L, R } = this.faces;
+          if (clockwise) {
+            [U[6], U[7], U[8], R[0], R[3], R[6], D[2], D[1], D[0], L[8], L[5], L[2]] =
+            [L[8], L[5], L[2], U[6], U[7], U[8], R[0], R[3], R[6], D[2], D[1], D[0]];
+          } else {
+            [U[6], U[7], U[8], R[0], R[3], R[6], D[2], D[1], D[0], L[8], L[5], L[2]] =
+            [R[0], R[3], R[6], D[2], D[1], D[0], L[8], L[5], L[2], U[6], U[7], U[8]];
+          }
+        }
+
+        this.moves.push(face + (clockwise ? '' : `'`));
+      }
+
+      applyMoves(moves) {
+        moves.forEach(move => {
+          const face = move[0];
+          const clockwise = move.length === 1;
+          this.rotateFace(face, clockwise);
+        });
+      }
+
+      scramble(times = 10) {
+        const faces = ['U', 'D', 'F', 'B', 'L', 'R'];
+        this.moves = [];
+        const moves = [];
+        for (let i = 0; i < times; i++) {
+          const f = faces[Math.floor(Math.random() * 6)];
+          const clockwise = Math.random() > 0.5;
+          moves.push(f + (clockwise ? '' : `'`));
+        }
+        this.applyMoves(moves);
+        this.scrambleMoves = [...moves]; // Store for reversal
+      }
+
+      solve() {
+        const reversed = this.scrambleMoves.slice().reverse().map(move => {
+          return move.endsWith(`'`) ? move[0] : move[0] + `'`;
+        });
+        this.applyMoves(reversed);
+        return reversed;
+      }
+    }
+
+    const cube = new RubiksCube();
+
+    function getCubeSvg(colorStr) {
+      // Placeholder SVG renderer (stub)
+      const map = { r: '🔴', g: '🟢', b: '🔵', y: '🟡', o: '🟠', w: '⚪' };
+      const view = colorStr
+        .split('')
+        .map(c => map[c] || c)
+        .join('')
+        .match(/.{1,9}/g)
+        .map((face, i) => `<div><strong>Face ${i+1}:</strong><br>${face}</div>`)
+        .join('<br>');
+      return view;
+    }
+
+    function displayCube() {
+      document.getElementById("cube").innerHTML = getCubeSvg(cube.getColorString());
+    }
+
+    function scrambleCube() {
+      cube.scramble(10);
+      displayCube();
+      console.log("Scrambled with:", cube.scrambleMoves.join(' '));
+    }
+
+    function solveCube() {
+      const solution = cube.solve();
+      displayCube();
+      console.log("Solution steps:", solution.join(' '));
+    }
+
+    // Initial Display
+    displayCube();
+  </script>
+</body>
+</html>
